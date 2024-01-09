@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using usuarios.models;
+using usuarios.Repository;
 
 namespace usuarios.Controllers
 {
@@ -7,25 +8,44 @@ namespace usuarios.Controllers
     [Route("api/[controller]")]
     public class UsuarioController : ControllerBase
     {
-        private static List<Usuario> Usuarios()
+        private readonly IUsuarioRepository _repository;
+
+        public UsuarioController(IUsuarioRepository repository)
         {
-            return new List<Usuario>
-            {
-                new Usuario{  Nome = "Lucas", Id = 1, DataNascimento = new DateTime(1999, 09, 05)  }
-            };
+            _repository = repository;
         }
+
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            return Ok(Usuarios());
+            var usuarios = await _repository.BuscaUsuarios();
+            return usuarios.Any() ? Ok(usuarios) : NoContent();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var usuario = await _repository.BuscaUsuario(id);
+            return usuario != null ? Ok(usuario) : NotFound();
         }
 
         [HttpPost]
-        public IActionResult Post(Usuario usuario)
+        public async Task<IActionResult> Post(Usuario usuario)
         {
-            var usuarios = Usuarios();
-            usuarios.Add(usuario);
-            return Ok(usuario);
+            _repository.AdicionaUsuario(usuario);
+            return await _repository.SaveChangesAsync() ? Ok("Usuario cadastrado com sucesso.") : BadRequest("Não foi possível salvar o usuário.");
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, Usuario usuario)
+        {
+            var usuarioBanco = await _repository.BuscaUsuario(id);
+            if (usuarioBanco == null) return NotFound("Usuario não encontrado");
+
+            usuarioBanco.Nome = usuario.Nome ?? usuarioBanco.Nome;
+            usuarioBanco.DataNascimento = usuario.DataNascimento != new DateTime() ? usuario.DataNascimento : usuarioBanco.DataNascimento;
+
+            return await _repository.SaveChangesAsync() ? Ok("Usuario atualizado com sucesso.") : BadRequest("Erro ao atualizar o usuário.");
         }
     }
 }

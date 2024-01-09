@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using usuarios.Data;
+using usuarios.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +13,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<UsuarioContext>(options =>
 {
-    options.UseNpgsql();
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
 });
+
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
 var app = builder.Build();
 
