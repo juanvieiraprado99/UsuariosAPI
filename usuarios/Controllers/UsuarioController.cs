@@ -45,7 +45,21 @@ namespace usuarios.Controllers
             usuarioBanco.Nome = usuario.Nome ?? usuarioBanco.Nome;
             usuarioBanco.DataNascimento = usuario.DataNascimento != new DateTime() ? usuario.DataNascimento : usuarioBanco.DataNascimento;
 
+            _repository.AtualizaUsuario(usuarioBanco);
+
             return await _repository.SaveChangesAsync() ? Ok("Usuario atualizado com sucesso.") : BadRequest("Erro ao atualizar o usuário.");
+        }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var usuarioBanco = await _repository.BuscaUsuario(id);
+            if (usuarioBanco == null) return NotFound("Usuario não encontrado");
+
+            _repository.DeletaUsuario(usuarioBanco);
+
+            return await _repository.SaveChangesAsync() ? Ok("Usuario deletado com sucesso.") : BadRequest("Erro ao deletar o usuário.");
         }
     }
 }

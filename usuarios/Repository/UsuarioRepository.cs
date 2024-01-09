@@ -34,7 +34,7 @@ namespace usuarios.Repository
 
         public void DeletaUsuario(Usuario usuario)
         {
-            throw new NotImplementedException();
+            _context.Remove(usuario);
         }
 
         public async Task<bool> SaveChangesAsync()
