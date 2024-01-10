@@ -1,18 +1,27 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using usuarios.models;
 using usuarios.Repository;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Authorization;
+using usuarios.Attributes;
+using usuarios.Caching;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace usuarios.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioRepository _repository;
+        private readonly ICachingService _cache;
 
-        public UsuarioController(IUsuarioRepository repository)
+        public UsuarioController(ICachingService cache, IUsuarioRepository repository)
         {
             _repository = repository;
+            _cache = cache;
         }
 
         [HttpGet]
@@ -25,7 +34,22 @@ namespace usuarios.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var usuario = await _repository.BuscaUsuario(id);
+            var usuariuoCache = await _cache.GetAsync(id.ToString());
+            Usuario? usuario;
+
+            if(!string.IsNullOrWhiteSpace(usuariuoCache))
+            {
+                usuario = JsonConvert.DeserializeObject<Usuario>(usuariuoCache);
+
+                Console.WriteLine("Adicionado no cache.");
+
+                return Ok(usuario);
+            }
+
+            usuario = await _repository.BuscaUsuario(id);
+
+            await _cache.SetAsync(id.ToString(), JsonConvert.SerializeObject(usuario));
+
             return usuario != null ? Ok(usuario) : NotFound();
         }
 
